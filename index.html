@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Sales Admin · coupletote.com</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ===================== LOCK SCREEN ===================== -->
+<div id="lockScreen" class="lock-screen">
+  <div class="lock-card">
+    <div class="lock-mark">
+      <span class="stitch-line" aria-hidden="true"></span>
+      <p class="eyebrow">coupletote.com</p>
+      <h1>Sales Admin</h1>
+    </div>
+
+    <div id="lockSetup" class="lock-body">
+      <p class="lock-copy">Set an admin passcode. It's stored only in this browser and simply hides the dashboard from casual eyes — it isn't real security, so don't rely on it for sensitive data.</p>
+      <label class="field-label" for="setupPass">New passcode</label>
+      <input type="password" id="setupPass" class="text-input" placeholder="At least 4 characters" autocomplete="new-password">
+      <button id="setupBtn" class="btn btn-primary">Set passcode &amp; enter</button>
+    </div>
+
+    <div id="lockEnter" class="lock-body hidden">
+      <p class="lock-copy">Enter your passcode to view the dashboard.</p>
+      <label class="field-label" for="enterPass">Passcode</label>
+      <input type="password" id="enterPass" class="text-input" placeholder="••••••••" autocomplete="current-password">
+      <button id="enterBtn" class="btn btn-primary">Unlock</button>
+      <button id="resetPassBtn" class="btn-link">Forgot it? Reset passcode (keeps your data)</button>
+      <p id="lockError" class="lock-error hidden">That passcode doesn't match. Try again.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== DASHBOARD ===================== -->
+<div id="app" class="app hidden">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="stitch-line" aria-hidden="true"></span>
+      <p class="eyebrow">coupletote.com</p>
+      <h1>Sales Admin</h1>
+    </div>
+    <div class="topbar-actions">
+      <button id="lockBtn" class="btn btn-ghost">Lock dashboard</button>
+    </div>
+  </header>
+
+  <main class="layout">
+
+    <!-- SUMMARY CARDS -->
+    <section class="summary-grid" aria-label="Overall summary">
+      <div class="stat-card">
+        <p class="stat-label">Total sales</p>
+        <p id="statTotalSales" class="stat-value">₹0</p>
+        <p class="stat-sub" id="statPeriodCount">0 reports logged</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Net position</p>
+        <p id="statNet" class="stat-value">₹0</p>
+        <p class="stat-sub" id="statNetSub">No data yet</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Best period</p>
+        <p id="statBest" class="stat-value stat-value--small">—</p>
+        <p class="stat-sub" id="statBestSub">&nbsp;</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Weakest period</p>
+        <p id="statWorst" class="stat-value stat-value--small">—</p>
+        <p class="stat-sub" id="statWorstSub">&nbsp;</p>
+      </div>
+    </section>
+
+    <div class="two-col">
+      <!-- ENTRY FORM -->
+      <section class="card" aria-label="Add a sales report">
+        <div class="card-head">
+          <p class="eyebrow">New entry</p>
+          <h2>Log a sales report</h2>
+          <span class="stitch-line" aria-hidden="true"></span>
+        </div>
+
+        <form id="entryForm" class="form-grid">
+          <input type="hidden" id="editId">
+
+          <div class="field">
+            <label class="field-label" for="periodType">Report type</label>
+            <select id="periodType" class="text-input">
+              <option value="Weekly">Weekly</option>
+              <option value="Monthly">Monthly</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="periodLabel">Period</label>
+            <input type="text" id="periodLabel" class="text-input" placeholder="e.g. Week of 21 Jul, or July 2026" required>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="totalSales">Total sales (₹)</label>
+            <input type="number" id="totalSales" class="text-input" step="0.01" min="0" placeholder="0.00" required>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="totalCost">Total cost / expenses (₹)</label>
+            <input type="number" id="totalCost" class="text-input" step="0.01" min="0" placeholder="0.00" required>
+          </div>
+
+          <div class="field field-wide">
+            <label class="field-label" for="notes">Notes <span class="optional">(optional)</span></label>
+            <input type="text" id="notes" class="text-input" placeholder="e.g. Diwali sale, new tote design launch...">
+          </div>
+
+          <div class="field field-wide result-preview" id="resultPreview">
+            <span class="result-label">Calculated result</span>
+            <span id="resultValue" class="result-value">Enter sales and cost above</span>
+          </div>
+
+          <div class="field field-wide form-actions">
+            <button type="submit" id="submitBtn" class="btn btn-primary">Save report</button>
+            <button type="button" id="cancelEditBtn" class="btn btn-ghost hidden">Cancel edit</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- TREND CHART -->
+      <section class="card" aria-label="Recent performance">
+        <div class="card-head">
+          <p class="eyebrow">Trend</p>
+          <h2>Recent performance</h2>
+          <span class="stitch-line" aria-hidden="true"></span>
+        </div>
+        <div id="chartWrap" class="chart-wrap">
+          <p class="empty-note">Your last few reports will appear here as a chart once you've logged some data.</p>
+        </div>
+        <div class="chart-legend">
+          <span><i class="dot dot-sales"></i> Sales</span>
+          <span><i class="dot dot-gain"></i> Gain</span>
+          <span><i class="dot dot-loss"></i> Loss</span>
+        </div>
+      </section>
+    </div>
+
+    <!-- REPORTS TABLE -->
+    <section class="card" aria-label="All reports">
+      <div class="card-head card-head--row">
+        <div>
+          <p class="eyebrow">History</p>
+          <h2>All reports</h2>
+        </div>
+        <div class="table-tools">
+          <select id="filterType" class="text-input text-input--compact">
+            <option value="All">All types</option>
+            <option value="Weekly">Weekly only</option>
+            <option value="Monthly">Monthly only</option>
+          </select>
+          <button id="exportBtn" class="btn btn-ghost">Export CSV</button>
+          <button id="backupBtn" class="btn btn-ghost">Download backup</button>
+          <label class="btn btn-ghost file-btn">
+            Restore backup
+            <input type="file" id="restoreInput" accept="application/json" hidden>
+          </label>
+        </div>
+      </div>
+      <span class="stitch-line" aria-hidden="true"></span>
+
+      <div class="table-scroll">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>Period</th>
+              <th>Type</th>
+              <th class="num">Sales</th>
+              <th class="num">Cost</th>
+              <th class="num">Result</th>
+              <th>Notes</th>
+              <th class="actions-col">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="reportTableBody">
+          </tbody>
+        </table>
+        <p id="tableEmpty" class="empty-note">No reports logged yet. Add your first one on the left.</p>
+      </div>
+
+      <div class="table-footer">
+        <button id="clearAllBtn" class="btn-link btn-link--danger">Erase all data from this browser</button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="foot-note">
+    <p>Data lives only in this browser's local storage on this device — it will not sync or back up on its own. Use "Download backup" regularly.</p>
+  </footer>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
