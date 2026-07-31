@@ -210,6 +210,96 @@ button:focus-visible, input:focus-visible, select:focus-visible{
 }
 
 /* =========================================================
+   Section nav (Sales Reports / Bag Profitability)
+   ========================================================= */
+.section-nav{
+  display:flex;
+  gap: 8px;
+  max-width: 1180px;
+  margin: 20px auto 0;
+  padding: 0 40px;
+  border-bottom: 1px solid var(--line);
+}
+.section-nav-btn{
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 500;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--ink-soft);
+  padding: 10px 4px 12px;
+  margin-right: 18px;
+  cursor: pointer;
+}
+.section-nav-btn:hover{ color: var(--ink); }
+.section-nav-btn.is-active{
+  color: var(--rosewood);
+  border-bottom-color: var(--rosewood);
+}
+
+/* Sub-tabs (e.g. Bag list / Fee settings) */
+.subtab-nav{
+  display:flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.subtab-btn{
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 500;
+  background: var(--card);
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  padding: 7px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.subtab-btn:hover{ border-color: var(--rosewood); color: var(--rosewood); }
+.subtab-btn.is-active{
+  background: var(--rosewood);
+  border-color: var(--rosewood);
+  color: #fff;
+}
+.subtab-panel{
+  display:flex;
+  flex-direction:column;
+  gap: 22px;
+  margin-top: 18px;
+}
+
+/* =========================================================
+   Derivation reference list (Bag Profitability explainer card)
+   ========================================================= */
+.derivation-list{
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display:flex;
+  flex-direction:column;
+}
+.derivation-list li{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px dashed var(--line);
+  font-size: 13.5px;
+}
+.derivation-list li:last-child{ border-bottom: none; }
+.d-label{ color: var(--ink); }
+.d-formula{
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.d-total .d-label{ font-weight: 600; color: var(--rosewood); }
+.d-total .d-formula{ color: var(--rosewood); }
+.derivation-note{ text-align:left; padding: 14px 0 0; }
+
+/* =========================================================
    Summary cards
    ========================================================= */
 .summary-grid{
