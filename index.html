@@ -53,7 +53,12 @@
     </div>
   </header>
 
-  <main class="layout">
+  <nav class="section-nav" aria-label="Dashboard sections">
+    <button class="section-nav-btn is-active" data-section="salesPane">Sales Reports</button>
+    <button class="section-nav-btn" data-section="bagsPane">Bag Profitability</button>
+  </nav>
+
+  <main id="salesPane" class="layout">
 
     <!-- SUMMARY CARDS -->
     <section class="summary-grid" aria-label="Overall summary">
@@ -195,6 +200,164 @@
         <button id="clearAllBtn" class="btn-link btn-link--danger">Erase all data from this browser</button>
       </div>
     </section>
+
+  </main>
+
+  <main id="bagsPane" class="layout hidden">
+
+    <!-- BAG SUMMARY CARDS -->
+    <section class="summary-grid" aria-label="Bag profitability summary">
+      <div class="stat-card">
+        <p class="stat-label">Bags tracked</p>
+        <p id="bagStatCount" class="stat-value">0</p>
+        <p class="stat-sub">&nbsp;</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Total all-in cost</p>
+        <p id="bagStatCost" class="stat-value">₹0</p>
+        <p class="stat-sub">Purchase + GST + fees</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Total selling price</p>
+        <p id="bagStatSelling" class="stat-value">₹0</p>
+        <p class="stat-sub">Revenue potential at 1.5x</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-label">Total profit</p>
+        <p id="bagStatProfit" class="stat-value stat-positive">₹0</p>
+        <p class="stat-sub" id="bagStatMargin">&nbsp;</p>
+      </div>
+    </section>
+
+    <nav class="subtab-nav" aria-label="Bag profitability sections">
+      <button class="subtab-btn is-active" data-subtab="bagListPane">Bag list</button>
+      <button class="subtab-btn" data-subtab="feeSettingsPane">Fee settings</button>
+    </nav>
+
+    <!-- ===================== BAG LIST TAB ===================== -->
+    <div id="bagListPane" class="subtab-panel">
+      <div class="two-col">
+
+        <section class="card" aria-label="Add a bag">
+          <div class="card-head">
+            <p class="eyebrow">New bag</p>
+            <h2>Add a bag</h2>
+            <span class="stitch-line" aria-hidden="true"></span>
+          </div>
+
+          <form id="bagForm" class="form-grid">
+            <input type="hidden" id="bagEditId">
+
+            <div class="field field-wide">
+              <label class="field-label" for="bagName">Bag name / label</label>
+              <input type="text" id="bagName" class="text-input" placeholder="e.g. Canvas Tote — Ivory" required>
+            </div>
+
+            <div class="field field-wide">
+              <label class="field-label" for="bagPurchase">Wholesale purchase rate (₹)</label>
+              <input type="number" id="bagPurchase" class="text-input" step="0.01" min="0" placeholder="0.00" required>
+            </div>
+
+            <div class="field field-wide result-preview" id="bagResultPreview">
+              <span class="result-label">Calculated selling price &amp; profit</span>
+              <span id="bagResultValue" class="result-value">Enter a purchase rate above</span>
+            </div>
+
+            <div class="field field-wide form-actions">
+              <button type="submit" id="bagSubmitBtn" class="btn btn-primary">Save bag</button>
+              <button type="button" id="bagCancelEditBtn" class="btn btn-ghost hidden">Cancel edit</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card" aria-label="How the numbers are derived">
+          <div class="card-head">
+            <p class="eyebrow">Reference</p>
+            <h2>How each value is derived</h2>
+            <span class="stitch-line" aria-hidden="true"></span>
+          </div>
+          <ol class="derivation-list" id="derivationList">
+            <li><span class="d-label">Purchase rate</span><span class="d-formula">what you enter</span></li>
+            <li><span class="d-label">+ GST (<span id="derivGstRate">18</span>%)</span><span class="d-formula">Purchase × <span id="derivGstRate2">18</span>%</span></li>
+            <li><span class="d-label">+ Fixed fee</span><span class="d-formula" id="derivFixed">₹400 flat</span></li>
+            <li><span class="d-label">+ Shipping &amp; Gateway fee</span><span class="d-formula" id="derivShip">₹200 flat</span></li>
+            <li class="d-total"><span class="d-label">= All-in cost</span><span class="d-formula">sum of the above</span></li>
+            <li><span class="d-label">Selling price</span><span class="d-formula">All-in cost × <span id="derivMarkup">1.5</span></span></li>
+            <li class="d-total"><span class="d-label">Profit</span><span class="d-formula">Selling price − All-in cost</span></li>
+          </ol>
+          <p class="empty-note derivation-note">Rates come from the Fee Settings tab — change them there and every bag recalculates.</p>
+        </section>
+      </div>
+
+      <section class="card" aria-label="All bags">
+        <div class="card-head card-head--row">
+          <div>
+            <p class="eyebrow">Catalog</p>
+            <h2>All bags</h2>
+          </div>
+        </div>
+        <span class="stitch-line" aria-hidden="true"></span>
+
+        <div class="table-scroll">
+          <table class="report-table">
+            <thead>
+              <tr>
+                <th>Bag</th>
+                <th class="num">Purchase</th>
+                <th class="num">GST</th>
+                <th class="num">Fixed fee</th>
+                <th class="num">Ship/Gateway</th>
+                <th class="num">All-in cost</th>
+                <th class="num">Selling price</th>
+                <th class="num">Profit</th>
+                <th class="num">Margin</th>
+                <th class="actions-col">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="bagTableBody"></tbody>
+          </table>
+          <p id="bagTableEmpty" class="empty-note">No bags added yet. Add your first one above.</p>
+        </div>
+
+        <div class="table-footer">
+          <button id="bagClearAllBtn" class="btn-link btn-link--danger">Erase all bag data from this browser</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===================== FEE SETTINGS TAB ===================== -->
+    <div id="feeSettingsPane" class="subtab-panel hidden">
+      <section class="card" aria-label="Fee settings">
+        <div class="card-head">
+          <p class="eyebrow">Applies to every bag</p>
+          <h2>Fee settings</h2>
+          <span class="stitch-line" aria-hidden="true"></span>
+        </div>
+
+        <form id="feeForm" class="form-grid">
+          <div class="field">
+            <label class="field-label" for="feeGst">GST rate (%)</label>
+            <input type="number" id="feeGst" class="text-input" step="0.01" min="0" required>
+          </div>
+          <div class="field">
+            <label class="field-label" for="feeFixed">Fixed fee per bag (₹)</label>
+            <input type="number" id="feeFixed" class="text-input" step="0.01" min="0" required>
+          </div>
+          <div class="field">
+            <label class="field-label" for="feeShip">Shipping &amp; Payment Gateway fee per bag (₹)</label>
+            <input type="number" id="feeShip" class="text-input" step="0.01" min="0" required>
+          </div>
+          <div class="field">
+            <label class="field-label" for="feeMarkup">Markup factor</label>
+            <input type="number" id="feeMarkup" class="text-input" step="0.01" min="1" required>
+          </div>
+
+          <div class="field field-wide form-actions">
+            <button type="submit" class="btn btn-primary">Save fee settings</button>
+          </div>
+        </form>
+      </section>
+    </div>
 
   </main>
 
