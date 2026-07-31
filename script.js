@@ -442,6 +442,264 @@ function todayStamp() {
 }
 
 /* =========================================================
+   Section nav (Sales Reports <-> Bag Profitability)
+   ========================================================= */
+function initSectionNav() {
+  document.querySelectorAll(".section-nav-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".section-nav-btn").forEach((b) => b.classList.remove("is-active"));
+      btn.classList.add("is-active");
+      const target = btn.dataset.section;
+      $("salesPane").classList.toggle("hidden", target !== "salesPane");
+      $("bagsPane").classList.toggle("hidden", target !== "bagsPane");
+      if (target === "bagsPane") renderBagsAll();
+    });
+  });
+
+  document.querySelectorAll(".subtab-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".subtab-btn").forEach((b) => b.classList.remove("is-active"));
+      btn.classList.add("is-active");
+      const target = btn.dataset.subtab;
+      $("bagListPane").classList.toggle("hidden", target !== "bagListPane");
+      $("feeSettingsPane").classList.toggle("hidden", target !== "feeSettingsPane");
+    });
+  });
+}
+
+/* =========================================================
+   Bag Profitability — storage
+   ========================================================= */
+const BAGS_KEY = "coupletote_bags_v1";
+const FEES_KEY = "coupletote_bag_fees_v1";
+const DEFAULT_FEES = { gst: 18, fixed: 400, ship: 200, markup: 1.5 };
+
+function getFees() {
+  try {
+    const raw = localStorage.getItem(FEES_KEY);
+    return raw ? { ...DEFAULT_FEES, ...JSON.parse(raw) } : { ...DEFAULT_FEES };
+  } catch (e) {
+    return { ...DEFAULT_FEES };
+  }
+}
+
+function saveFees(fees) {
+  localStorage.setItem(FEES_KEY, JSON.stringify(fees));
+}
+
+function getBags() {
+  try {
+    const raw = localStorage.getItem(BAGS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    console.error("Could not read bags from storage", e);
+    return [];
+  }
+}
+
+function saveBags(bags) {
+  localStorage.setItem(BAGS_KEY, JSON.stringify(bags));
+}
+
+/* =========================================================
+   Bag Profitability — calculation
+   Purchase -> + GST% -> + fixed fee -> + shipping/gateway fee
+   -> All-in cost -> Selling price (all-in cost x markup)
+   -> Profit = Selling price - All-in cost
+   ========================================================= */
+function calcBag(purchase, fees) {
+  const gstAmt = +(purchase * (fees.gst / 100)).toFixed(2);
+  const allInCost = +(purchase + gstAmt + fees.fixed + fees.ship).toFixed(2);
+  const sellingPrice = +(allInCost * fees.markup).toFixed(2);
+  const profit = +(sellingPrice - allInCost).toFixed(2);
+  const margin = sellingPrice > 0 ? (profit / sellingPrice) * 100 : 0;
+  return { gstAmt, allInCost, sellingPrice, profit, margin };
+}
+
+/* =========================================================
+   Bag Profitability — live preview + form
+   ========================================================= */
+function updateBagResultPreview() {
+  const purchase = parseFloat($("bagPurchase").value);
+  const el = $("bagResultValue");
+  if (isNaN(purchase) || purchase < 0) {
+    el.textContent = "Enter a purchase rate above";
+    el.className = "result-value";
+    return;
+  }
+  const fees = getFees();
+  const { allInCost, sellingPrice, profit } = calcBag(purchase, fees);
+  el.className = "result-value is-gain";
+  el.textContent = `Sell at ${fmtMoney(sellingPrice)} → profit ${fmtMoney(profit)} (all-in cost ${fmtMoney(allInCost)})`;
+}
+
+function handleBagSubmit(e) {
+  e.preventDefault();
+  const id = $("bagEditId").value;
+  const name = $("bagName").value.trim();
+  const purchase = parseFloat($("bagPurchase").value);
+
+  if (!name || isNaN(purchase) || purchase < 0) {
+    toast("Enter a bag name and a valid purchase rate.");
+    return;
+  }
+
+  let bags = getBags();
+  if (id) {
+    bags = bags.map((b) => (b.id === id ? { ...b, name, purchase } : b));
+    toast("Bag updated.");
+  } else {
+    bags.push({ id: uid(), name, purchase, createdAt: new Date().toISOString() });
+    toast("Bag saved.");
+  }
+  saveBags(bags);
+  resetBagForm();
+  renderBagsAll();
+}
+
+function resetBagForm() {
+  $("bagForm").reset();
+  $("bagEditId").value = "";
+  $("bagSubmitBtn").textContent = "Save bag";
+  $("bagCancelEditBtn").classList.add("hidden");
+  updateBagResultPreview();
+}
+
+function startBagEdit(id) {
+  const b = getBags().find((x) => x.id === id);
+  if (!b) return;
+  $("bagEditId").value = b.id;
+  $("bagName").value = b.name;
+  $("bagPurchase").value = b.purchase;
+  $("bagSubmitBtn").textContent = "Update bag";
+  $("bagCancelEditBtn").classList.remove("hidden");
+  updateBagResultPreview();
+  $("bagListPane").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function deleteBag(id) {
+  if (!confirm("Delete this bag? This can't be undone.")) return;
+  saveBags(getBags().filter((b) => b.id !== id));
+  renderBagsAll();
+  toast("Bag deleted.");
+}
+
+/* =========================================================
+   Bag Profitability — rendering
+   ========================================================= */
+function renderDerivationCard(fees) {
+  $("derivGstRate").textContent = fees.gst;
+  $("derivGstRate2").textContent = fees.gst;
+  $("derivFixed").textContent = `${fmtMoney(fees.fixed)} flat`;
+  $("derivShip").textContent = `${fmtMoney(fees.ship)} flat`;
+  $("derivMarkup").textContent = fees.markup;
+}
+
+function renderBagSummary(bags, fees) {
+  const totalCost = bags.reduce((s, b) => s + calcBag(b.purchase, fees).allInCost, 0);
+  const totalSelling = bags.reduce((s, b) => s + calcBag(b.purchase, fees).sellingPrice, 0);
+  const totalProfit = totalSelling - totalCost;
+  const margin = totalSelling > 0 ? (totalProfit / totalSelling) * 100 : 0;
+
+  $("bagStatCount").textContent = bags.length;
+  $("bagStatCost").textContent = fmtMoney(totalCost);
+  $("bagStatSelling").textContent = fmtMoney(totalSelling);
+  $("bagStatProfit").textContent = fmtMoney(totalProfit);
+  $("bagStatMargin").textContent = bags.length ? `~${margin.toFixed(1)}% margin` : "No bags yet";
+}
+
+function renderBagTable(bags, fees) {
+  const body = $("bagTableBody");
+  const empty = $("bagTableEmpty");
+  body.innerHTML = "";
+
+  if (bags.length === 0) {
+    empty.classList.remove("hidden");
+    return;
+  }
+  empty.classList.add("hidden");
+
+  [...bags].reverse().forEach((b) => {
+    const c = calcBag(b.purchase, fees);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(b.name)}</td>
+      <td class="num">${fmtMoney(b.purchase)}</td>
+      <td class="num">${fmtMoney(c.gstAmt)}</td>
+      <td class="num">${fmtMoney(fees.fixed)}</td>
+      <td class="num">${fmtMoney(fees.ship)}</td>
+      <td class="num">${fmtMoney(c.allInCost)}</td>
+      <td class="num">${fmtMoney(c.sellingPrice)}</td>
+      <td class="num result-cell is-gain">+${fmtMoney(c.profit)}</td>
+      <td class="num">${c.margin.toFixed(1)}%</td>
+      <td class="actions-col">
+        <div class="row-actions">
+          <button class="row-btn" data-bag-edit="${b.id}">Edit</button>
+          <button class="row-btn row-btn--danger" data-bag-delete="${b.id}">Delete</button>
+        </div>
+      </td>
+    `;
+    body.appendChild(tr);
+  });
+
+  body.querySelectorAll("[data-bag-edit]").forEach((btn) =>
+    btn.addEventListener("click", () => startBagEdit(btn.dataset.bagEdit))
+  );
+  body.querySelectorAll("[data-bag-delete]").forEach((btn) =>
+    btn.addEventListener("click", () => deleteBag(btn.dataset.bagDelete))
+  );
+}
+
+function renderBagsAll() {
+  const fees = getFees();
+  const bags = getBags();
+  renderDerivationCard(fees);
+  renderBagSummary(bags, fees);
+  renderBagTable(bags, fees);
+}
+
+function loadFeeForm() {
+  const fees = getFees();
+  $("feeGst").value = fees.gst;
+  $("feeFixed").value = fees.fixed;
+  $("feeShip").value = fees.ship;
+  $("feeMarkup").value = fees.markup;
+}
+
+function handleFeeSubmit(e) {
+  e.preventDefault();
+  const gst = parseFloat($("feeGst").value);
+  const fixed = parseFloat($("feeFixed").value);
+  const ship = parseFloat($("feeShip").value);
+  const markup = parseFloat($("feeMarkup").value);
+
+  if ([gst, fixed, ship, markup].some((v) => isNaN(v) || v < 0) || markup < 1) {
+    toast("Check the fee settings — all values must be valid numbers (markup at least 1).");
+    return;
+  }
+  saveFees({ gst, fixed, ship, markup });
+  toast("Fee settings saved. Bag list recalculated.");
+  renderBagsAll();
+  updateBagResultPreview();
+}
+
+function initBagProfitability() {
+  loadFeeForm();
+  $("bagForm").addEventListener("submit", handleBagSubmit);
+  $("bagPurchase").addEventListener("input", updateBagResultPreview);
+  $("bagCancelEditBtn").addEventListener("click", resetBagForm);
+  $("feeForm").addEventListener("submit", handleFeeSubmit);
+  $("bagClearAllBtn").addEventListener("click", () => {
+    if (confirm("Erase ALL saved bag data from this browser? This cannot be undone.")) {
+      localStorage.removeItem(BAGS_KEY);
+      renderBagsAll();
+      toast("All bag data erased.");
+    }
+  });
+  renderBagsAll();
+}
+
+/* =========================================================
    Wire up
    ========================================================= */
 function initApp() {
@@ -463,6 +721,9 @@ function initApp() {
       toast("All report data erased.");
     }
   });
+
+  initSectionNav();
+  initBagProfitability();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
